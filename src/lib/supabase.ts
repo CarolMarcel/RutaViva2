@@ -1,11 +1,19 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from './database.types';
+// src/lib/supabase.ts
+// Simulación de Supabase para entorno local sin .env
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = {
+  auth: {
+    getSession: async () => ({ data: { session: null } }),
+    onAuthStateChange: (_event: any, _callback: any) => ({ data: { subscription: { unsubscribe: () => {} } } }),
+    signUp: async () => ({ data: null, error: null }),
+    signInWithPassword: async () => ({ data: null, error: null }),
+    signOut: async () => ({ error: null }),
+    resetPasswordForEmail: async () => ({ error: null }),
+  },
+  from: () => ({
+    select: () => ({ data: null, error: null }),
+    insert: () => ({ data: null, error: null }),
+    eq: () => ({ data: null, error: null }),
+    maybeSingle: () => ({ data: null, error: null }),
+  }),
+};
