@@ -21,21 +21,69 @@ export function ClientDashboard() {
   }, []);
 
   const loadDestinations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('destinations')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
+  try {
+    const { data, error } = await supabase
+      .from('destinations')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
 
-      if (error) throw error;
-      setDestinations(data || []);
-    } catch (error) {
-      console.error('Error loading destinations:', error);
-    } finally {
-      setLoading(false);
+    if (error) throw error;
+
+    // Si no hay datos desde Supabase, cargamos datos simulados
+    if (!data || data.length === 0) {
+      console.warn('⚠️ No se encontraron destinos en Supabase. Mostrando datos de ejemplo...');
+      setDestinations([
+        {
+          id: 1,
+          name: 'Aventura en Caño Cristales',
+          location: 'La Macarena, Meta',
+          price: 450000,
+          max_people: 12,
+          image_url: 'https://upload.wikimedia.org/wikipedia/commons/4/4a/Ca%C3%B1o_Cristales%2C_Colombia.jpg',
+          description: 'Conoce el río de los cinco colores, una maravilla natural única.',
+          is_active: true
+        },
+        {
+          id: 2,
+          name: 'City Tour Cartagena',
+          location: 'Cartagena, Bolívar',
+          price: 120000,
+          max_people: 30,
+          image_url: 'https://upload.wikimedia.org/wikipedia/commons/d/d4/Cartagena_de_Indias_-_Getseman%C3%AD_-_Classic_car.jpg',
+          description: 'Recorre la ciudad amurallada y disfruta de su historia colonial.',
+          is_active: true
+        },
+        {
+          id: 3,
+          name: 'Expedición Tayrona',
+          location: 'Santa Marta, Magdalena',
+          price: 250000,
+          max_people: 15,
+          image_url: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Parque_Tayrona.jpg',
+          description: 'Explora las paradisíacas playas y la selva tropical del Parque Tayrona.',
+          is_active: true
+        },
+        {
+          id: 4,
+          name: 'Tour Valle del Cocora',
+          location: 'Quindío, Colombia',
+          price: 150000,
+          max_people: 10,
+          image_url: 'https://upload.wikimedia.org/wikipedia/commons/6/63/Valle_de_Cocora%2C_Quind%C3%ADo%2C_Colombia.jpg',
+          description: 'Disfruta del paisaje cafetero y las majestuosas palmas de cera.',
+          is_active: true
+        }
+      ]);
+    } else {
+      setDestinations(data);
     }
-  };
+  } catch (error) {
+    console.error('Error loading destinations:', error);
+  } finally {
+    setLoading(false);
+  }
+};    
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">

@@ -42,13 +42,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const signUp = async (email: string, password: string, fullName: string, phone: string) => {
     console.log("Mock signUp ejecutado:", email);
+
+    // Simulación: revisa si el correo ya existe
+    const existingUsers = JSON.parse(localStorage.getItem("users") || "[]");
+    const userExists = existingUsers.some((u: any) => u.email === email);
+
+    if (userExists) {
+      return Promise.resolve({ error: new Error("Ya existe una cuenta con este correo electrónico.") });
+    }
+
+    // Crea un nuevo usuario simulado
+    const newUser = {
+      id: Date.now().toString(),
+      email,
+      full_name: fullName,
+      phone,
+      role: "client",
+    };
+
+    // Guarda el usuario en localStorage (simulación de base de datos)
+    localStorage.setItem("users", JSON.stringify([...existingUsers, newUser]));
+
+    // Retorna éxito
     return Promise.resolve({ error: null });
   };
 
   const signIn = async (email: string, password: string) => {
     console.log("Mock signIn ejecutado:", email);
-    setUser({ id: "1", email, role: "client" });
-    setProfile({ id: "1", full_name: "Usuario Demo", role: "client" });
+
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const found = users.find((u: any) => u.email === email);
+
+    if (!found) {
+      return Promise.resolve({ error: new Error("No existe una cuenta con este correo.") });
+    }
+
+    setUser({ id: found.id, email: found.email, role: "client" });
+    setProfile({ id: found.id, full_name: found.full_name, role: "client" });
+
     return Promise.resolve({ error: null });
   };
 
