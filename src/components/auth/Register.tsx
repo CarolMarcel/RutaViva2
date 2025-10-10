@@ -17,54 +17,67 @@ export function Register({ onToggleMode }: RegisterProps) {
     password: '',
     confirmPassword: '',
   });
+  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  e.preventDefault();
+  setError('');
+  setMessage('');
 
-    const sanitizedName = sanitizeInput(formData.fullName);
-    if (!sanitizedName || sanitizedName.length < 3) {
-      setError('El nombre debe tener al menos 3 caracteres');
-      return;
+  const sanitizedName = sanitizeInput(formData.fullName);
+  if (!sanitizedName || sanitizedName.length < 3) {
+    setError('El nombre debe tener al menos 3 caracteres');
+    return;
+  }
+
+  if (!validateEmail(formData.email)) {
+    setError('Por favor ingresa un correo electrónico válido');
+    return;
+  }
+
+  // Validación de número chileno (+56 9 XXXX XXXX)
+  const phoneRegex = /^\+56\s?9\s?\d{4}\s?\d{4}$/;
+  if (!phoneRegex.test(formData.phone)) {
+    setError('Por favor ingresa un número válido: +56 9 XXXX XXXX');
+    return;
+  }
+
+  const passwordValidation = validatePassword(formData.password);
+  if (!passwordValidation.isValid) {
+    setError(passwordValidation.message);
+    return;
+  }
+
+  if (formData.password !== formData.confirmPassword) {
+    setError('Las contraseñas no coinciden');
+    return;
+  }
+
+  setLoading(true);
+
+  const encryptedPhone = encryptData(formData.phone);
+  const { error: signUpError } = await signUp(
+    formData.email,
+    formData.password,
+    sanitizedName,
+    encryptedPhone
+  );
+
+  setLoading(false);
+
+  if (signUpError) {
+    if (signUpError.message?.includes('duplicate')) {
+      setError('Ya existe una cuenta registrada con este correo electrónico.');
+    } else {
+      setError('Error al crear la cuenta. Por favor intenta de nuevo.');
     }
-
-    if (!validateEmail(formData.email)) {
-      setError('Por favor ingresa un correo electrónico válido');
-      return;
-    }
-
-    if (!validatePhone(formData.phone)) {
-      setError('Por favor ingresa un número de teléfono válido (10 dígitos)');
-      return;
-    }
-
-    const passwordValidation = validatePassword(formData.password);
-    if (!passwordValidation.isValid) {
-      setError(passwordValidation.message);
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      return;
-    }
-
-    setLoading(true);
-    const encryptedPhone = encryptData(formData.phone);
-    const { error: signUpError } = await signUp(
-      formData.email,
-      formData.password,
-      sanitizedName,
-      encryptedPhone
-    );
-    setLoading(false);
-
-    if (signUpError) {
-      setError(signUpError.message || 'Error al crear la cuenta. Por favor intenta de nuevo.');
-    }
-  };
+  } else {
+    setMessage('✅ Registro exitoso. ¡Ahora puedes iniciar sesión!');
+  }
+};
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -81,6 +94,12 @@ export function Register({ onToggleMode }: RegisterProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {message && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+            {message}
+          </div>
+        )}
+
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
             {error}
@@ -132,7 +151,7 @@ export function Register({ onToggleMode }: RegisterProps) {
               value={formData.phone}
               onChange={(e) => handleChange('phone', e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              placeholder="3001234567"
+              placeholder="+56 9 1234 5678"
               required
             />
           </div>
