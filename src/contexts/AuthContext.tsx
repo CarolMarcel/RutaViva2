@@ -3,21 +3,31 @@ import { supabase } from '../lib/supabase';
 
 interface Profile {
   id: string;
+  email: string;
   full_name?: string;
-  role?: string; // 'admin' | 'client' | 'collaborator'
-  email?: string;
+  phone?: string;
+  role: 'admin' | 'client' | 'collaborator';
 }
 
-const AuthContext = createContext<any>(null);
+interface AuthContextType {
+  user: any;
+  profile: Profile | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<any>;
+  signUp: (email: string, password: string) => Promise<any>;
+  signOut: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Cargar sesión actual + perfil
+  // Cargar sesión actual
   useEffect(() => {
-    const getSessionAndProfile = async () => {
+    const getSession = async () => {
       const { data } = await supabase.auth.getSession();
       const currentUser = data.session?.user ?? null;
       setUser(currentUser);
@@ -25,95 +35,63 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (currentUser) {
         await loadUserProfile(currentUser.id);
       }
-
       setLoading(false);
     };
 
-    getSessionAndProfile();
+    getSession();
 
-    // 🔹 Escucha cambios en el estado de autenticación
-    const { data: subscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
 
-      if (currentUser) {
-        await loadUserProfile(currentUser.id);
-      } else {
-        setProfile(null);
+        if (currentUser) {
+          await loadUserProfile(currentUser.id);
+        } else {
+          setProfile(null);
+        }
       }
-    });
+    );
 
-    return () => subscription?.subscription.unsubscribe();
+    return () => subscription.subscription.unsubscribe();
   }, []);
 
-  // 🔹 Función auxiliar para obtener el perfil desde la tabla profiles
+  // Cargar perfil desde la tabla profiles
   const loadUserProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, role, email')
+      .select('*')
       .eq('id', userId)
       .single();
 
     if (error) {
-      console.error('⚠️ Error al cargar el perfil:', error.message);
+      console.warn('⚠️ No se encontró el perfil del usuario:', error.message);
       setProfile(null);
-      return;
+    } else {
+      setProfile(data);
     }
-
-    console.log('✅ Perfil cargado:', data);
-    setProfile(data);
   };
 
-  // 🔹 LOGIN real
+  // Login
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-
-    if (error) {
-      console.error('❌ Error al iniciar sesión:', error.message);
-      return { data: null, error };
-    }
-
-    setUser(data.user);
-    await loadUserProfile(data.user.id);
+    if (error) throw error;
+    if (data.user) await loadUserProfile(data.user.id);
     return { data, error };
   };
 
-  // 🔹 REGISTRO real (y creación de perfil en la tabla profiles)
+  // Registro
   const signUp = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (error) {
-      console.error('❌ Error al registrar:', error.message);
-      return { data: null, error };
-    }
-
-    if (data.user) {
-      // Crea un registro en la tabla profiles con rol "client" por defecto
-      const { error: profileError } = await supabase.from('profiles').insert([
-        {
-          id: data.user.id,
-          email: email,
-          full_name: 'Nuevo usuario',
-          role: 'client',
-        },
-      ]);
-
-      if (profileError) console.error('⚠️ Error creando perfil:', profileError.message);
-
-      await loadUserProfile(data.user.id);
-    }
-
-    setUser(data.user);
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+    if (data.user) await loadUserProfile(data.user.id);
     return { data, error };
   };
 
-  // 🔹 LOGOUT
+  // Logout
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -121,16 +99,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, signIn, signUp, signOut, loading }}>
+    <AuthContext.Provider
+      value={{ user, profile, loading, signIn, signUp, signOut }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth debe usarse dentro de AuthProvider');
-  return context;
+    const context = useContext(AuthContext);
+    if (!context)
+      throw new Error('useAuth debe usarse dentro de AuthProvider');
+    return context;
 };
 
 
