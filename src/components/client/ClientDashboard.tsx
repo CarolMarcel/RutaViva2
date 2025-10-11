@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogOut, Calendar, MapPin, DollarSign, User } from 'lucide-react';
+import { LogOut, Calendar, MapPin } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { DestinationCard } from './DestinationCard';
@@ -21,83 +21,64 @@ export function ClientDashboard() {
   }, []);
 
   const loadDestinations = async () => {
-  try {
-    // Datos simulados (como si vinieran de Supabase)
-    const data = [
-      {
-        id: 1,
-        name: "Aventura en Caño Cristales",
-        location: "La Macarena, Meta",
-        price: 450000,
-        max_people: 12,
-        image_url: "https://upload.wikimedia.org/wikipedia/commons/4/4a/Ca%C3%B1o_Cristales%2C_Colombia.jpg",
-        description: "Conoce el río de los cinco colores, una maravilla natural única.",
-        is_active: true,
-      },
-      {
-        id: 2,
-        name: "City Tour Cartagena",
-        location: "Cartagena, Bolívar",
-        price: 120000,
-        max_people: 30,
-        image_url: "https://upload.wikimedia.org/wikipedia/commons/d/d4/Cartagena_de_Indias_-_Getseman%C3%AD_-_Classic_car.jpg",
-        description: "Recorre la ciudad amurallada y disfruta de su historia colonial.",
-        is_active: true,
-      },
-      {
-        id: 3,
-        name: "Expedición Tayrona",
-        location: "Santa Marta, Magdalena",
-        price: 250000,
-        max_people: 15,
-        image_url: "https://upload.wikimedia.org/wikipedia/commons/8/85/Parque_Tayrona_-_Playa.jpg",
-        description: "Explora las paradisíacas playas y la selva tropical del Parque Tayrona.",
-        is_active: true,
-      },
-    ];
+    try {
+      console.log('🔄 Cargando destinos desde Supabase...');
+      const { data, error } = await supabase
+        .from('destinations')
+        .select('*')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
 
-    setDestinations(data);
-  } catch (error) {
-    console.error("Error loading destinations:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+      if (error) throw error;
 
+      if (!data || data.length === 0) {
+        console.warn('⚠️ No hay destinos activos en Supabase.');
+        setDestinations([]);
+      } else {
+        console.log(`✅ ${data.length} destinos cargados.`);
+        setDestinations(data);
+      }
+    } catch (error) {
+      console.error('❌ Error al cargar destinos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+      {/* NAV */}
       <nav className="bg-white shadow-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-                <MapPin className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-                  RutaViva
-                </h1>
-                <p className="text-xs text-gray-500">Panel del Cliente</p>
-              </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+              <MapPin className="w-6 h-6 text-white" />
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{profile?.full_name}</p>
-                <p className="text-xs text-gray-500">{profile?.email}</p>
-              </div>
-              <button
-                onClick={signOut}
-                className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="text-sm font-medium">Salir</span>
-              </button>
+            <div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+                RutaViva
+              </h1>
+              <p className="text-xs text-gray-500">Panel del Cliente</p>
             </div>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-900">{profile?.full_name}</p>
+              <p className="text-xs text-gray-500">{profile?.email}</p>
+            </div>
+            <button
+              onClick={signOut}
+              className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-sm font-medium">Salir</span>
+            </button>
           </div>
         </div>
       </nav>
 
+      {/* CONTENIDO */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <div className="flex space-x-4 border-b border-gray-200">
@@ -172,3 +153,4 @@ export function ClientDashboard() {
     </div>
   );
 }
+
