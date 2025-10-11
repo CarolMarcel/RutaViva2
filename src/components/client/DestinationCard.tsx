@@ -1,4 +1,4 @@
-import { MapPin, Users, DollarSign } from 'lucide-react';
+import { MapPin, Users } from 'lucide-react';
 import type { Database } from '../../lib/database.types';
 
 type Destination = Database['public']['Tables']['destinations']['Row'];
@@ -9,10 +9,11 @@ interface DestinationCardProps {
 }
 
 export function DestinationCard({ destination, onReserve }: DestinationCardProps) {
+  // 🔹 Formato para pesos chilenos (CLP)
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-CO', {
+    return new Intl.NumberFormat('es-CL', {
       style: 'currency',
-      currency: 'COP',
+      currency: 'CLP',
       minimumFractionDigits: 0,
     }).format(amount);
   };
@@ -21,29 +22,40 @@ export function DestinationCard({ destination, onReserve }: DestinationCardProps
     <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
       <div className="relative h-48 overflow-hidden">
         <img
-          src={destination.image_url || 'https://images.pexels.com/photos/2265876/pexels-photo-2265876.jpeg'}
+          src={
+            destination.image_url ||
+            'https://images.pexels.com/photos/2265876/pexels-photo-2265876.jpeg'
+          }
           alt={destination.name}
           className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
         />
         <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full shadow-md">
-          <span className="text-sm font-bold text-green-600">{formatCurrency(destination.price_per_person)}</span>
+          <span className="text-sm font-bold text-green-600">
+            {formatCurrency(destination.price || 0)}
+          </span>
         </div>
       </div>
 
       <div className="p-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-2">{destination.name}</h3>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">
+          {destination.name}
+        </h3>
 
         <div className="flex items-center text-gray-600 mb-3">
           <MapPin className="w-4 h-4 mr-2" />
           <span className="text-sm">{destination.location}</span>
         </div>
 
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{destination.description}</p>
+        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+          {destination.description}
+        </p>
 
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center text-gray-600">
             <Users className="w-4 h-4 mr-2" />
-            <span className="text-sm">Máx. {destination.max_capacity} personas</span>
+            <span className="text-sm">
+              Máx. {destination.max_people} personas
+            </span>
           </div>
         </div>
 
