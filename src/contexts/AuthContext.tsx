@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(currentUser);
 
       if (currentUser) {
+        console.log("✅ Usuario autenticado:", currentUser);
         await loadUserProfile(currentUser.id);
       }
       setLoading(false);
@@ -58,14 +59,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Cargar perfil desde la tabla profiles
   const loadUserProfile = async (userId: string) => {
+    console.log("🟡 Buscando perfil para el usuario:", userId);
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
 
+    console.log("📄 Perfil cargado:", data, "❌ Error:", error);
+
     if (error) {
-      console.warn('⚠️ No se encontró el perfil del usuario:', error.message);
       setProfile(null);
     } else {
       setProfile(data);
