@@ -8,16 +8,16 @@ import React, {
 import { supabase } from "../lib/supabase";
 import type { User } from "@supabase/supabase-js";
 
-// 🔹 Tipo del perfil almacenado en la tabla "profiles"
+// Tipo del perfil almacenado en la tabla "profiles"
 interface Profile {
   id: string;
   email: string;
   full_name?: string;
   role?: string;
-  [key: string]: unknown; // reemplaza "any" por "unknown" (recomendado por ESLint)
+  [key: string]: unknown;
 }
 
-// 🔹 Tipo del contexto de autenticación
+// Tipo del contexto de autenticación
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
@@ -27,7 +27,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-// 🔹 Crear el contexto con tipo seguro
+// Crear el contexto
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -35,23 +35,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // ✅ Cargar sesión y perfil al iniciar
+  // Verificar sesión inicial y escuchar cambios
   useEffect(() => {
-    const getSession = async (): Promise<void> => {
-      const { data } = await supabase.auth.getSession();
-      const currentUser = data.session?.user ?? null;
-      setUser(currentUser);
+   const getSession = async (): Promise<void> => {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
 
-      if (currentUser) {
-        console.log("✅ Usuario autenticado:", currentUser);
-        await loadUserProfile(currentUser.id);
-      }
-      setLoading(false);
-    };
+    const currentUser = data.session?.user ?? null;
+    setUser(currentUser);
+
+    if (currentUser) {
+      console.log("✅ Usuario autenticado:", currentUser);
+      await loadUserProfile(currentUser.id);
+    } else {
+      console.warn("⚠️ No hay usuario autenticado");
+    }
+  } catch (err) {
+    console.error("Error al obtener la sesión:", err);
+  } finally {
+    console.log("🟢 Terminó getSession, cambiando loading a false");
+    setLoading(false);
+  }
+};
 
     getSession();
 
-    // 🔸 Escucha cambios en la sesión
     const { data: subscription } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         const currentUser = session?.user ?? null;
@@ -68,25 +77,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.subscription.unsubscribe();
   }, []);
 
-  // 🔹 Cargar perfil desde la tabla "profiles"
+  // Cargar perfil del usuario
   const loadUserProfile = async (userId: string): Promise<void> => {
-    console.log("🟡 Buscando perfil para el usuario:", userId);
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
+  console.log("🟡 Buscando perfil para el usuario:", userId);
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
 
-    console.log("📄 Perfil cargado:", data, "❌ Error:", error);
+  if (error) {
+    console.warn("❌ No se encontró perfil:", error.message);
+    setProfile(null);
+  } else {
+    console.log("📄 Perfil cargado:", data);
+    setProfile(data as Profile);
+  }
 
-    if (error || !data) {
-      setProfile(null);
-    } else {
-      setProfile(data as Profile);
-    }
-  };
+  // ✅ Asegurar que se apague el loading incluso si hay error
+  setLoading(false);
+};
 
-  // 🔹 Login
+
+  // Login
   const signIn = async (email: string, password: string): Promise<void> => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -96,30 +109,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (data.user) await loadUserProfile(data.user.id);
   };
 
-  // 🔹 Registro
+  // Registro
   const signUp = async (email: string, password: string): Promise<void> => {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
     if (data.user) await loadUserProfile(data.user.id);
   };
 
-  // 🔹 Logout
+  // Logout
   const signOut = async (): Promise<void> => {
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
   };
 
+  // Evitar renderizado mientras se carga
+  if (loading) {
+    return (
+      <div
+        style={{
+          padding: "20px",
+          textAlign: "center",
+          color: "#555",
+          fontSize: "1.1rem",
+        }}
+      >
+        Cargando configuración de usuario...
+      </div>
+    );
+  }
+
   return (
     <AuthContext.Provider
       value={{ user, profile, loading, signIn, signUp, signOut }}
     >
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
 
-// 🔹 Hook para usar el contexto de forma segura
+// Hook para usar el contexto
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context)
