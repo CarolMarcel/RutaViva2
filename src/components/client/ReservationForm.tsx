@@ -24,13 +24,13 @@ export function ReservationForm({ destination, onClose, onSuccess }: Reservation
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // ✅ Soporte para nombre correcto del campo (price o price_per_person)
+  // ✅ Soporte flexible: algunos registros pueden tener "price" o "price_per_person"
   const pricePerPerson = destination.price_per_person || destination.price || 0;
 
   // ✅ Total calculado dinámicamente
   const totalAmount = pricePerPerson * formData.numberOfPeople;
 
-  // ✅ Formato en pesos chilenos (CLP)
+  // ✅ Formato CLP (pesos chilenos)
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
@@ -39,6 +39,14 @@ export function ReservationForm({ destination, onClose, onSuccess }: Reservation
     }).format(amount);
   };
 
+  // ✅ Fecha mínima (mañana)
+  const getTomorrowDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  };
+
+  // ✅ Envío del formulario
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -49,9 +57,12 @@ export function ReservationForm({ destination, onClose, onSuccess }: Reservation
     }
 
     if (!validateNumber(formData.numberOfPeople, 1, destination.max_people || 1)) {
-      setError(
-        `El número de personas debe estar entre 1 y ${destination.max_people || 1}`
-      );
+      setError(`El número de personas debe estar entre 1 y ${destination.max_people || 1}`);
+      return;
+    }
+
+    if (!user?.id) {
+      setError('Error: no se encontró el usuario autenticado.');
       return;
     }
 
@@ -63,67 +74,63 @@ export function ReservationForm({ destination, onClose, onSuccess }: Reservation
         : null;
 
       console.log('🧾 Datos enviados a Supabase:', {
-  client_id: user?.id,
-  destination_id: destination.id,
-  reservation_date: formData.date,
-  number_of_people: formData.numberOfPeople,
-  total_amount: totalAmount,
-  special_requests: encryptedRequests,
-});
+        client_id: user.id, // ✅ UUID real del usuario Supabase
+        destination_id: destination.id,
+        reservation_date: formData.date,
+        number_of_people: formData.numberOfPeople,
+        total_amount: totalAmount,
+      });
 
-const { data, error: insertError } = await supabase
-  .from('reservations')
-  .insert([
-    {
-      client_id: user?.id,
-      destination_id: destination.id,
-      reservation_date: formData.date,
-      number_of_people: formData.numberOfPeople,
-      total_amount: totalAmount,
-      special_requests: encryptedRequests,
-      status: 'pending',
-      payment_status: 'pending',
-    },
-  ])
-  .select();
-
-if (insertError) {
-  console.error('❌ Error al insertar en Supabase:', insertError);
-  setError(`Error al crear la reserva: ${insertError.message}`);
-  return;
-}
-
-console.log('✅ Reserva creada correctamente:', data);
+      // ✅ Insertar reserva
+      const { data, error: insertError } = await supabase
+        .from('reservations')
+        .insert([
+          {
+            client_id: user.id, // ✅ Ahora UUID válido
+            destination_id: destination.id,
+            reservation_date: formData.date,
+            number_of_people: formData.numberOfPeople,
+            total_amount: totalAmount,
+            special_requests: encryptedRequests,
+            status: 'pending',
+            payment_status: 'pending',
+          },
+        ])
+        .select();
 
       if (insertError) throw insertError;
 
-      await supabase.from('audit_logs').insert({
-        user_id: user?.id,
-        action: 'RESERVATION_CREATED',
-        table_name: 'reservations',
-        new_data: {
-          destination_id: destination.id,
-          reservation_date: formData.date,
-          number_of_people: formData.numberOfPeople,
-          total_amount: totalAmount,
-        },
-      });
+      console.log('✅ Reserva creada correctamente:', data);
+
+      // ✅ Insertar registro en audit_logs solo si existe la tabla
+      const { error: logError } = await supabase
+        .from('audit_logs')
+        .insert([
+          {
+            user_id: user.id,
+            action: 'RESERVATION_CREATED',
+            table_name: 'reservations',
+            new_data: {
+              destination_id: destination.id,
+              reservation_date: formData.date,
+              number_of_people: formData.numberOfPeople,
+              total_amount: totalAmount,
+            },
+          },
+        ]);
+
+      if (logError) console.warn('⚠️ No se pudo guardar en audit_logs:', logError.message);
 
       onSuccess();
-    } catch (err) {
-      console.error('Error creating reservation:', err);
+    } catch (err: any) {
+      console.error('❌ Error al crear la reserva:', err);
       setError('Error al crear la reserva. Por favor intenta de nuevo.');
     } finally {
       setLoading(false);
     }
   };
 
-  const getTomorrowDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
-  };
-
+  // ✅ Render
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -163,9 +170,7 @@ console.log('✅ Reserva creada correctamente:', data);
                 <input
                   type="date"
                   value={formData.date}
-                  onChange={(e) =>
-                    setFormData({ ...formData, date: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   min={getTomorrowDate()}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
@@ -207,10 +212,7 @@ console.log('✅ Reserva creada correctamente:', data);
                 <textarea
                   value={formData.specialRequests}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      specialRequests: e.target.value,
-                    })
+                    setFormData({ ...formData, specialRequests: e.target.value })
                   }
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows={4}
@@ -223,15 +225,11 @@ console.log('✅ Reserva creada correctamente:', data);
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Precio por persona:</span>
-                <span className="font-medium text-gray-900">
-                  {formatCurrency(pricePerPerson)}
-                </span>
+                <span className="font-medium text-gray-900">{formatCurrency(pricePerPerson)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Número de personas:</span>
-                <span className="font-medium text-gray-900">
-                  {formData.numberOfPeople}
-                </span>
+                <span className="font-medium text-gray-900">{formData.numberOfPeople}</span>
               </div>
               <div className="border-t border-gray-200 pt-2 mt-2">
                 <div className="flex justify-between">
@@ -266,4 +264,5 @@ console.log('✅ Reserva creada correctamente:', data);
     </div>
   );
 }
+
 
