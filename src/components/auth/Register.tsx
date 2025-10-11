@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { UserPlus, Mail, Lock, User, Phone } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { validateEmail, validatePassword, validatePhone, sanitizeInput } from '../../lib/validation';
+import { validateEmail, validatePassword, sanitizeInput } from '../../lib/validation';
 import { encryptData } from '../../lib/encryption';
 
 interface RegisterProps {
@@ -17,17 +17,17 @@ export function Register({ onToggleMode }: RegisterProps) {
     password: '',
     confirmPassword: '',
   });
-  ;
+
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setMessage('');
 
+    // 🧹 Sanitizar y validar campos
     const sanitizedName = sanitizeInput(formData.fullName);
     if (!sanitizedName || sanitizedName.length < 3) {
       setError('El nombre debe tener al menos 3 caracteres');
@@ -39,12 +39,12 @@ export function Register({ onToggleMode }: RegisterProps) {
       return;
     }
 
-    // Validación de número chileno (+56 9 XXXX XXXX)
+    // Validación formato chileno: +56 9 XXXX XXXX
     const phoneRegex = /^\+56\s?9\s?\d{4}\s?\d{4}$/;
     if (!phoneRegex.test(formData.phone)) {
       setError('Por favor ingresa un número válido: +56 9 XXXX XXXX');
       return;
-   }
+    }
 
     const passwordValidation = validatePassword(formData.password);
     if (!passwordValidation.isValid) {
@@ -59,23 +59,25 @@ export function Register({ onToggleMode }: RegisterProps) {
 
     setLoading(true);
 
-    const encryptedPhone = encryptData(formData.phone);
-    const { error: signUpError } = await signUp(
-      formData.email,
-      formData.password,
-      sanitizedName,
-      encryptedPhone
-    );
+    try {
+      const encryptedPhone = encryptData(formData.phone);
 
-    setLoading(false);
+      // ✅ Crear cuenta real en Supabase
+      const { data, error: signUpError } = await signUp(formData.email, formData.password);
 
-    if (signUpError) {
-      if (signUpError.message?.includes('duplicate')) {
-        setError('Ya existe una cuenta registrada con este correo electrónico.');
+      if (signUpError) {
+        console.error('Error al crear usuario:', signUpError);
+        if (signUpError.message?.includes('duplicate')) {
+          setError('Ya existe una cuenta registrada con este correo electrónico.');
+        } else {
+          setError('Error al crear la cuenta. Por favor intenta de nuevo.');
+        }
       } else {
-        setError('Error al crear la cuenta. Por favor intenta de nuevo.');
-      }
-    } else {
+        // 🔐 Opcional: guarda los datos extra en tu tabla "profiles"
+        // await supabase.from('profiles').insert([
+        //   { id: data.user.id, full_name: sanitizedName, phone: encryptedPhone }
+        // ]);
+
         setMessage('✅ Cuenta creada exitosamente. Ahora puedes iniciar sesión.');
         setFormData({
           fullName: '',
@@ -83,9 +85,14 @@ export function Register({ onToggleMode }: RegisterProps) {
           phone: '',
           password: '',
           confirmPassword: '',
-    });
-  }
-
+        });
+      }
+    } catch (err) {
+      console.error('Error inesperado:', err);
+      setError('Ocurrió un error inesperado. Intenta nuevamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (field: string, value: string) => {
@@ -115,6 +122,7 @@ export function Register({ onToggleMode }: RegisterProps) {
           </div>
         )}
 
+        {/* Nombre */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Nombre Completo
@@ -132,6 +140,7 @@ export function Register({ onToggleMode }: RegisterProps) {
           </div>
         </div>
 
+        {/* Correo */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Correo Electrónico
@@ -149,6 +158,7 @@ export function Register({ onToggleMode }: RegisterProps) {
           </div>
         </div>
 
+        {/* Teléfono */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Teléfono
@@ -166,6 +176,7 @@ export function Register({ onToggleMode }: RegisterProps) {
           </div>
         </div>
 
+        {/* Contraseña */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Contraseña
@@ -186,6 +197,7 @@ export function Register({ onToggleMode }: RegisterProps) {
           </p>
         </div>
 
+        {/* Confirmar */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Confirmar Contraseña
@@ -203,6 +215,7 @@ export function Register({ onToggleMode }: RegisterProps) {
           </div>
         </div>
 
+        {/* Botón */}
         <button
           type="submit"
           disabled={loading}
@@ -226,3 +239,4 @@ export function Register({ onToggleMode }: RegisterProps) {
     </div>
   );
 }
+

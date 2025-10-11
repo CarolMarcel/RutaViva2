@@ -22,29 +22,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
     });
 
-    return () => {
-      subscription?.subscription.unsubscribe();
-    };
+    return () => subscription?.subscription.unsubscribe();
   }, []);
 
-  // ✅ Función de login real
+  // ✅ LOGIN real
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-
     if (error) throw error;
     setUser(data.user);
   };
 
+  // ✅ REGISTRO real (crear usuario nuevo)
+  const signUp = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    if (error) throw error;
+    setUser(data.user);
+  };
+
+  // ✅ LOGOUT
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, loading }}>
+    <AuthContext.Provider value={{ user, signIn, signUp, signOut, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );
@@ -55,4 +63,5 @@ export const useAuth = () => {
   if (!context) throw new Error('useAuth debe usarse dentro de AuthProvider');
   return context;
 };
+
 
