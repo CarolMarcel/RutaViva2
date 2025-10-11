@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LogIn, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { validateEmail } from '../../lib/validation';
@@ -10,6 +11,7 @@ interface LoginProps {
 
 export function Login({ onToggleMode, onForgotPassword }: LoginProps) {
   const { signIn } = useAuth();
+  const navigate = useNavigate(); // 👈 Hook para redirigir sin recargar la app
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -33,8 +35,6 @@ export function Login({ onToggleMode, onForgotPassword }: LoginProps) {
 
     try {
       setLoading(true);
-      console.log('🔹 Iniciando sesión con:', email);
-
       const { data, error: signInError } = await signIn(email, password);
 
       if (signInError) {
@@ -46,10 +46,10 @@ export function Login({ onToggleMode, onForgotPassword }: LoginProps) {
       if (data?.user) {
         console.log('✅ Sesión iniciada correctamente:', data.user);
         setMessage(`Bienvenido/a ${data.user.email || ''}`);
-        // 🔹 Redirige al panel del cliente
+        // ⏳ Pequeño retraso antes de redirigir
         setTimeout(() => {
-          window.location.href = '/client'; // cambia esta ruta si tu dashboard es diferente
-        }, 1500);
+          navigate('/client'); // 👈 redirige dentro del enrutador
+        }, 1000);
       } else {
         setError('No se pudo obtener la sesión. Intenta nuevamente.');
       }
@@ -151,4 +151,5 @@ export function Login({ onToggleMode, onForgotPassword }: LoginProps) {
     </div>
   );
 }
+
 

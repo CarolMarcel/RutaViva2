@@ -26,7 +26,7 @@ function AuthFlow() {
 }
 
 function DashboardRouter() {
-  const { profile, loading } = useAuth();
+  const { profile, loading, user } = useAuth();
 
   if (loading) {
     return (
@@ -39,10 +39,15 @@ function DashboardRouter() {
     );
   }
 
-  if (!profile) {
+  // 🔹 Si no hay usuario autenticado, mostrar el flujo de login/register
+  if (!user || !profile) {
     return <AuthFlow />;
   }
 
+  console.log('✅ Usuario autenticado:', user.email);
+  console.log('📋 Rol detectado:', profile.role);
+
+  // 🔹 Redirección automática según el rol del usuario
   switch (profile.role) {
     case 'admin':
       return (
@@ -65,15 +70,12 @@ function DashboardRouter() {
     default:
       return <AuthFlow />;
   }
-} 
+}
 
-function App() {
+export default function App() {
   return (
     <AuthProvider>
       <DashboardRouter />
     </AuthProvider>
   );
-}  
-
-
-export default App; 
+}
