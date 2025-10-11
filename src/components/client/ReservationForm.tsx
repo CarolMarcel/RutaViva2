@@ -62,16 +62,38 @@ export function ReservationForm({ destination, onClose, onSuccess }: Reservation
         ? encryptData(formData.specialRequests)
         : null;
 
-      const { error: insertError } = await supabase.from('reservations').insert({
-        client_id: user?.id,
-        destination_id: destination.id,
-        reservation_date: formData.date,
-        number_of_people: formData.numberOfPeople,
-        total_amount: totalAmount,
-        special_requests: encryptedRequests,
-        status: 'pending',
-        payment_status: 'pending',
-      });
+      console.log('🧾 Datos enviados a Supabase:', {
+  client_id: user?.id,
+  destination_id: destination.id,
+  reservation_date: formData.date,
+  number_of_people: formData.numberOfPeople,
+  total_amount: totalAmount,
+  special_requests: encryptedRequests,
+});
+
+const { data, error: insertError } = await supabase
+  .from('reservations')
+  .insert([
+    {
+      client_id: user?.id,
+      destination_id: destination.id,
+      reservation_date: formData.date,
+      number_of_people: formData.numberOfPeople,
+      total_amount: totalAmount,
+      special_requests: encryptedRequests,
+      status: 'pending',
+      payment_status: 'pending',
+    },
+  ])
+  .select();
+
+if (insertError) {
+  console.error('❌ Error al insertar en Supabase:', insertError);
+  setError(`Error al crear la reserva: ${insertError.message}`);
+  return;
+}
+
+console.log('✅ Reserva creada correctamente:', data);
 
       if (insertError) throw insertError;
 
