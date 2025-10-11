@@ -13,11 +13,13 @@ export function Login({ onToggleMode, onForgotPassword }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setMessage('');
 
     if (!validateEmail(email)) {
       setError('Por favor ingresa un correo electrónico válido');
@@ -29,12 +31,33 @@ export function Login({ onToggleMode, onForgotPassword }: LoginProps) {
       return;
     }
 
-    setLoading(true);
-    const { error: signInError } = await signIn(email, password);
-    setLoading(false);
+    try {
+      setLoading(true);
+      console.log('🔹 Iniciando sesión con:', email);
 
-    if (signInError) {
-      setError('Credenciales incorrectas. Por favor verifica tu correo y contraseña.');
+      const { data, error: signInError } = await signIn(email, password);
+
+      if (signInError) {
+        console.error('❌ Error de inicio de sesión:', signInError.message);
+        setError('Credenciales incorrectas. Por favor verifica tu correo y contraseña.');
+        return;
+      }
+
+      if (data?.user) {
+        console.log('✅ Sesión iniciada correctamente:', data.user);
+        setMessage(`Bienvenido/a ${data.user.email || ''}`);
+        // 🔹 Redirige al panel del cliente
+        setTimeout(() => {
+          window.location.href = '/client'; // cambia esta ruta si tu dashboard es diferente
+        }, 1500);
+      } else {
+        setError('No se pudo obtener la sesión. Intenta nuevamente.');
+      }
+    } catch (err: any) {
+      console.error('⚠️ Error inesperado:', err.message);
+      setError('Error al intentar iniciar sesión. Intenta nuevamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,6 +72,12 @@ export function Login({ onToggleMode, onForgotPassword }: LoginProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {message && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+            {message}
+          </div>
+        )}
+
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
             {error}
@@ -122,3 +151,4 @@ export function Login({ onToggleMode, onForgotPassword }: LoginProps) {
     </div>
   );
 }
+
