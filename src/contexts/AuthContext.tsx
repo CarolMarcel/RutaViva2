@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Cargar sesión actual
+  // 🔹 Cargar sesión actual
   useEffect(() => {
     const getSession = async () => {
       const { data } = await supabase.auth.getSession();
@@ -17,7 +17,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     getSession();
 
-    // 🔁 Escuchar cambios de sesión
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
@@ -25,7 +24,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription?.subscription.unsubscribe();
   }, []);
 
-  // ✅ LOGIN real
+  // 🔹 LOGIN real
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -33,9 +32,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
     if (error) throw error;
     setUser(data.user);
+    return { data, error };
   };
 
-  // ✅ REGISTRO real (crear usuario nuevo)
+  // 🔹 REGISTRO real
   const signUp = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -43,9 +43,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
     if (error) throw error;
     setUser(data.user);
+    return { data, error }; // ✅ Ahora sí devuelve un objeto
   };
 
-  // ✅ LOGOUT
+  // 🔹 LOGOUT
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -63,5 +64,6 @@ export const useAuth = () => {
   if (!context) throw new Error('useAuth debe usarse dentro de AuthProvider');
   return context;
 };
+
 
 
