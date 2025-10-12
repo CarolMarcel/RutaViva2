@@ -1,81 +1,44 @@
 import { useState } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useAuth, AuthProvider } from './contexts/AuthContext';
 import { Login } from './components/auth/Login';
 import { Register } from './components/auth/Register';
-import { ForgotPassword } from './components/auth/ForgotPassword';
-import { ClientDashboard } from './components/client/ClientDashboard';
-import { AdminDashboard } from './components/admin/AdminDashboard';
-import { CollaboratorDashboard } from './components/collaborator/CollaboratorDashboard';
-import { ProtectedRoute } from './components/ProtectedRoute';
 
 function AuthFlow() {
-  const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot'>('login');
-
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center px-4">
-      {authMode === 'login' && (
-        <Login
-          onToggleMode={() => setAuthMode('register')}
-          onForgotPassword={() => setAuthMode('forgot')}
-        />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50">
+      {mode === 'login' ? (
+        <Login onToggleMode={() => setMode('register')} />
+      ) : (
+        <Register onToggleMode={() => setMode('login')} />
       )}
-      {authMode === 'register' && <Register onToggleMode={() => setAuthMode('login')} />}
-      {authMode === 'forgot' && <ForgotPassword onBack={() => setAuthMode('login')} />}
     </div>
   );
 }
 
-function DashboardRouter() {
-  const { profile, loading, user } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-lg">Cargando...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // 🔹 Si no hay usuario autenticado, mostrar el flujo de login/register
-  if (!user || !profile) {
-    return <AuthFlow />;
-  }
-
-  console.log('✅ Usuario autenticado:', user.email);
-  console.log('📋 Rol detectado:', profile.role);
-
-  // 🔹 Redirección automática según el rol del usuario
-  switch (profile.role) {
-    case 'admin':
-      return (
-        <ProtectedRoute allowedRoles={['admin']}>
-          <AdminDashboard />
-        </ProtectedRoute>
-      );
-    case 'collaborator':
-      return (
-        <ProtectedRoute allowedRoles={['collaborator']}>
-          <CollaboratorDashboard />
-        </ProtectedRoute>
-      );
-    case 'client':
-      return (
-        <ProtectedRoute allowedRoles={['client']}>
-          <ClientDashboard />
-        </ProtectedRoute>
-      );
-    default:
-      return <AuthFlow />;
-  }
+function Dashboard() {
+  const { user, signOut } = useAuth();
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+      <h1 className="text-3xl font-bold mb-2 text-blue-700">¡Bienvenido a RutaViva!</h1>
+      <p className="text-gray-600 mb-4">{user?.fullName}</p>
+      <button onClick={signOut} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+        Cerrar sesión
+      </button>
+    </div>
+  );
 }
 
-export default function App() {
+function App() {
+  const { user } = useAuth();
+  return user ? <Dashboard /> : <AuthFlow />;
+}
+
+export default function RootApp() {
   return (
     <AuthProvider>
-      <DashboardRouter />
+      <App />
     </AuthProvider>
   );
 }
+

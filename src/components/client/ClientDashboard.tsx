@@ -1,156 +1,61 @@
-import { useState, useEffect } from 'react';
-import { LogOut, Calendar, MapPin } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { useState } from 'react';
 import { DestinationCard } from './DestinationCard';
 import { ReservationForm } from './ReservationForm';
 import { MyReservations } from './MyReservations';
-import type { Database } from '../../lib/database.types';
-
-type Destination = Database['public']['Tables']['destinations']['Row'];
+import { mockDestinations } from '../../lib/mockDb';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function ClientDashboard() {
-  const { profile, signOut } = useAuth();
-  const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
-  const [activeTab, setActiveTab] = useState<'explore' | 'reservations'>('explore');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadDestinations();
-  }, []);
-
-  const loadDestinations = async () => {
-    try {
-      console.log('🔄 Cargando destinos desde Supabase...');
-      const { data, error } = await supabase
-        .from('destinations')
-        .select('*')
-        .eq('is_active', true)
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-
-      if (!data || data.length === 0) {
-        console.warn('⚠️ No hay destinos activos en Supabase.');
-        setDestinations([]);
-      } else {
-        console.log(`✅ ${data.length} destinos cargados.`);
-        setDestinations(data);
-      }
-    } catch (error) {
-      console.error('❌ Error al cargar destinos:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { user, signOut } = useAuth();
+  const [selectedDestination, setSelectedDestination] = useState<any | null>(null);
+  const [showReservations, setShowReservations] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* NAV */}
-      <nav className="bg-white shadow-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-              <MapPin className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-                RutaViva
-              </h1>
-              <p className="text-xs text-gray-500">Panel del Cliente</p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">{profile?.full_name}</p>
-              <p className="text-xs text-gray-500">{profile?.email}</p>
-            </div>
-            <button
-              onClick={signOut}
-              className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="text-sm font-medium">Salir</span>
-            </button>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-md py-4 px-6 flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-blue-600">RutaViva - Bienvenido {user?.fullName}</h1>
+        <div className="space-x-3">
+          <button
+            onClick={() => setShowReservations(!showReservations)}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+          >
+            {showReservations ? 'Ver Destinos' : 'Mis Reservas'}
+          </button>
+          <button
+            onClick={signOut}
+            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+          >
+            Cerrar Sesión
+          </button>
         </div>
-      </nav>
+      </header>
 
-      {/* CONTENIDO */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex space-x-4 border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab('explore')}
-              className={`px-6 py-3 font-medium transition-colors ${
-                activeTab === 'explore'
-                  ? 'border-b-2 border-blue-500 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <MapPin className="w-4 h-4" />
-                <span>Explorar Destinos</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('reservations')}
-              className={`px-6 py-3 font-medium transition-colors ${
-                activeTab === 'reservations'
-                  ? 'border-b-2 border-blue-500 text-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4" />
-                <span>Mis Reservas</span>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {activeTab === 'explore' ? (
+      <main className="p-6">
+        {!showReservations ? (
           <>
-            {loading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Cargando destinos...</p>
-              </div>
-            ) : destinations.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-                <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-600">No hay destinos disponibles en este momento</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {destinations.map((destination) => (
-                  <DestinationCard
-                    key={destination.id}
-                    destination={destination}
-                    onReserve={() => setSelectedDestination(destination)}
-                  />
-                ))}
-              </div>
-            )}
+            <h2 className="text-xl font-semibold mb-4">Explora nuestros destinos</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {mockDestinations.map((dest) => (
+                <DestinationCard
+                  key={dest.id}
+                  destination={dest}
+                  onReserve={() => setSelectedDestination(dest)}
+                />
+              ))}
+            </div>
           </>
         ) : (
           <MyReservations />
         )}
-      </div>
+      </main>
 
       {selectedDestination && (
         <ReservationForm
           destination={selectedDestination}
           onClose={() => setSelectedDestination(null)}
-          onSuccess={() => {
-            setSelectedDestination(null);
-            setActiveTab('reservations');
-          }}
+          onSuccess={() => setSelectedDestination(null)}
         />
       )}
     </div>
   );
 }
-
