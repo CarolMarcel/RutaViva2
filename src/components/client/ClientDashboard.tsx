@@ -1,7 +1,6 @@
+import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { useState, useEffect } from "react";
 import { destinations } from "../../lib/mockDb";
-import { DestinationCard } from "./DestinationCard";
 
 interface Reservation {
   id: number;
@@ -10,86 +9,176 @@ interface Reservation {
   people: number;
   total: number;
   userEmail: string;
+  status: string;
 }
 
 export function ClientDashboard() {
   const { user, signOut } = useAuth();
-  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [tab, setTab] = useState("destinations");
+  const [reservations, setReservations] = useState<Reservation[]>(
+    JSON.parse(localStorage.getItem("rutaviva_reservations") || "[]")
+  );
 
-  // Cargar reservas guardadas localmente del usuario actual
-  useEffect(() => {
-    const savedReservations =
-      JSON.parse(localStorage.getItem("rutaviva_reservations") || "[]") || [];
-    const userReservations = savedReservations.filter(
-      (r: Reservation) => r.userEmail === user?.email
+  const handleReserve = (destination: any) => {
+    const date = prompt("Ingresa la fecha de tu reserva (DD/MM/AAAA):");
+    const people = Number(prompt("¿Cuántas personas viajarán?"));
+    if (!date || !people) return alert("Datos incompletos.");
+
+    const total = destination.price * people;
+    const newReservation = {
+      id: Date.now(),
+      destination: destination.title,
+      date,
+      people,
+      total,
+      userEmail: user?.email || "usuario@rutaviva.cl",
+      status: "Pendiente",
+    };
+
+    const updated = [...reservations, newReservation];
+    setReservations(updated);
+    localStorage.setItem("rutaviva_reservations", JSON.stringify(updated));
+    alert("✅ Reserva creada con éxito.");
+  };
+
+  const cancelReservation = (id: number) => {
+    if (!confirm("¿Deseas cancelar esta reserva?")) return;
+    const updated = reservations.map((r) =>
+      r.id === id ? { ...r, status: "Cancelada" } : r
     );
-    setReservations(userReservations);
-  }, [user]);
+    setReservations(updated);
+    localStorage.setItem("rutaviva_reservations", JSON.stringify(updated));
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-8">
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-6">
-        {/* Encabezado */}
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 p-8">
+      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+        {/* Header */}
         <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">
-              🌿 Bienvenido/a, {user?.fullName || "Usuario"}
-            </h1>
-            <p className="text-gray-600 text-sm">
-              Gracias por preferir RutaViva — tus aventuras en Chile comienzan aquí!
-            </p>
+            <h1 className="text-2xl font-bold text-gray-800">RutaViva</h1>
+            <p className="text-gray-600 text-sm">Panel del Cliente</p>
           </div>
-          <button
-            onClick={signOut}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors"
-          >
-            Cerrar sesión
-          </button>
+          <div className="text-right">
+            <p className="font-semibold text-gray-800">{user?.fullName}</p>
+            <p className="text-sm text-gray-500">{user?.email}</p>
+            <button
+              onClick={signOut}
+              className="mt-2 bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-red-600"
+            >
+              Salir
+            </button>
+          </div>
         </header>
 
+        {/* Tabs */}
+        <nav className="flex gap-6 border-b border-gray-200 mb-6">
+          <button
+            onClick={() => setTab("destinations")}
+            className={`pb-2 font-semibold ${
+              tab === "destinations"
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-gray-500"
+            }`}
+          >
+            🌎 Explorar Destinos
+          </button>
+          <button
+            onClick={() => setTab("reservations")}
+            className={`pb-2 font-semibold ${
+              tab === "reservations"
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-gray-500"
+            }`}
+          >
+            📅 Mis Reservas
+          </button>
+        </nav>
+
         {/* Sección de destinos */}
-        <section className="mb-10">
-          <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-            Explora nuestros destinos
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {tab === "destinations" && (
+          <div className="grid md:grid-cols-3 gap-6">
             {destinations.map((dest) => (
-              <DestinationCard key={dest.id} destination={dest} />
+              <div
+                key={dest.id}
+                className="bg-white border border-gray-200 rounded-xl shadow hover:shadow-lg transition overflow-hidden"
+              >
+                <img
+                  src={dest.image}
+                  alt={dest.title}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-4">
+                  <h3 className="text-lg font-bold text-gray-800">
+                    {dest.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    📍 {dest.location}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-2">{dest.description}</p>
+                  <p className="text-green-700 font-semibold mb-2">
+                    💰 ${dest.price.toLocaleString("es-CL")}
+                  </p>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Máx. {dest.maxPeople} personas
+                  </p>
+                  <button
+                    onClick={() => handleReserve(dest)}
+                    className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
+                  >
+                    Reservar Ahora
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
-        </section>
+        )}
 
         {/* Sección de reservas */}
-        <section>
-          <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-            Mis Reservas
-          </h2>
-
-          {reservations.length === 0 ? (
-            <p className="text-gray-500">
-              Aún no tienes reservas registradas.  
-              ¡Haz clic en “Reservar ahora” para comenzar tu próxima aventura!
-            </p>
-          ) : (
-            <div className="grid gap-4">
-              {reservations.map((reserva) => (
+        {tab === "reservations" && (
+          <div className="space-y-4">
+            {reservations.length === 0 ? (
+              <p className="text-gray-500">
+                Aún no tienes reservas registradas.
+              </p>
+            ) : (
+              reservations.map((r) => (
                 <div
-                  key={reserva.id}
-                  className="p-5 border border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition"
+                  key={r.id}
+                  className="p-4 border border-gray-200 rounded-xl bg-gray-50 flex justify-between items-start"
                 >
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {reserva.destination}
-                  </h3>
-                  <p className="text-sm text-gray-600">📅 Fecha: {reserva.date}</p>
-                  <p className="text-sm text-gray-600">👥 Personas: {reserva.people}</p>
-                  <p className="text-sm text-green-700 font-semibold">
-                    💰 Total: ${reserva.total.toLocaleString("es-CL")}
-                  </p>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {r.destination}
+                    </h3>
+                    <p className="text-sm text-gray-600">📅 {r.date}</p>
+                    <p className="text-sm text-gray-600">👥 {r.people} personas</p>
+                    <p className="text-sm text-green-700 font-semibold">
+                      💰 ${r.total.toLocaleString("es-CL")}
+                    </p>
+                    <p
+                      className={`text-sm mt-2 font-semibold ${
+                        r.status === "Cancelada"
+                          ? "text-red-600"
+                          : "text-yellow-600"
+                      }`}
+                    >
+                      Estado: {r.status}
+                    </p>
+                  </div>
+                  {r.status !== "Cancelada" && (
+                    <button
+                      onClick={() => cancelReservation(r.id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-red-600"
+                    >
+                      Cancelar
+                    </button>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
