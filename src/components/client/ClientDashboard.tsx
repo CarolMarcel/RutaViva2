@@ -117,7 +117,7 @@ export function ClientDashboard() {
                   </p>
                   <p className="text-sm text-gray-600 mb-2">{dest.description}</p>
                   <p className="text-green-700 font-semibold mb-2">
-                    💰 ${dest.price.toLocaleString("es-CL")}
+                    💰 ${dest.price?.toLocaleString("es-CL") || "0"}
                   </p>
                   <p className="text-sm text-gray-500 mb-4">
                     Máx. {dest.maxPeople} personas
