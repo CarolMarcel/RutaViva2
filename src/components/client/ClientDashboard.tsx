@@ -19,15 +19,26 @@ export function ClientDashboard() {
     JSON.parse(localStorage.getItem("rutaviva_reservations") || "[]")
   );
 
-  const handleReserve = (destination: any) => {
-    const date = prompt("📅 Ingresa la fecha de tu reserva (DD/MM/AAAA):");
-    const people = Number(prompt("👥 ¿Cuántas personas viajarán?"));
-    if (!date || !people) return alert("⚠️ Debes completar todos los campos.");
+  // Estado del modal
+  const [selectedDestination, setSelectedDestination] = useState<any | null>(null);
+  const [date, setDate] = useState("");
+  const [people, setPeople] = useState(1);
+  const [notes, setNotes] = useState("");
 
-    const total = destination.price * people;
+  const handleReserve = (destination: any) => {
+    setSelectedDestination(destination);
+    setDate("");
+    setPeople(1);
+    setNotes("");
+  };
+
+  const confirmReservation = () => {
+    if (!date || !people) return alert("⚠️ Debes ingresar la fecha y cantidad de personas.");
+
+    const total = selectedDestination.price * people;
     const newReservation = {
       id: Date.now(),
-      destination: destination.name,
+      destination: selectedDestination.name,
       date,
       people,
       total,
@@ -38,6 +49,7 @@ export function ClientDashboard() {
     const updated = [...reservations, newReservation];
     setReservations(updated);
     localStorage.setItem("rutaviva_reservations", JSON.stringify(updated));
+    setSelectedDestination(null);
     alert("✅ Reserva creada con éxito.");
   };
 
@@ -183,6 +195,80 @@ export function ClientDashboard() {
           </div>
         )}
       </div>
+
+      {/* Modal de Reserva */}
+      {selectedDestination && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg relative">
+            <button
+              onClick={() => setSelectedDestination(null)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-xl"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-2xl font-bold mb-4">Realizar Reserva</h2>
+
+            <div className="mb-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-800">
+                {selectedDestination.name}
+              </h3>
+              <p className="text-sm text-gray-600">{selectedDestination.location}</p>
+            </div>
+
+            <label className="block mb-2 font-medium">📅 Fecha de la Reserva</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 mb-4 focus:ring focus:ring-blue-200"
+            />
+
+            <label className="block mb-2 font-medium">
+              👥 Número de Personas (Máx. {selectedDestination.maxPeople})
+            </label>
+            <input
+              type="number"
+              value={people}
+              min={1}
+              max={selectedDestination.maxPeople}
+              onChange={(e) => setPeople(Number(e.target.value))}
+              className="w-full border rounded-lg px-3 py-2 mb-4 focus:ring focus:ring-blue-200"
+            />
+
+            <label className="block mb-2 font-medium">📝 Solicitudes Especiales (Opcional)</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Menciona algún requerimiento especial..."
+              className="w-full border rounded-lg px-3 py-2 mb-6 focus:ring focus:ring-blue-200"
+            />
+
+            <div className="border-t pt-4 flex justify-between items-center text-lg font-semibold">
+              <span>Total:</span>
+              <span className="text-green-700">
+                ${ (selectedDestination.price * people).toLocaleString("es-CL") }
+              </span>
+            </div>
+
+            <div className="flex justify-end mt-6 gap-4">
+              <button
+                onClick={() => setSelectedDestination(null)}
+                className="px-5 py-2 rounded-lg border border-gray-300 hover:bg-gray-100"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmReservation}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 shadow-md"
+              >
+                Confirmar Reserva
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
