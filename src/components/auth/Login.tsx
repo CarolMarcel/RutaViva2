@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import logo from "../../assets/logo4_1.png";
+import logo from "../../assets/logo_4_1.png";
 
 interface LoginProps {
   onToggleMode: () => void;
