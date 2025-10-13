@@ -71,14 +71,14 @@ export function ClientDashboard() {
         </div>
       </header>
 
-        {/* Tabs */}
-        <nav className="flex gap-6 border-b border-gray-200 mb-6">
+        {/* Navegación */}
+        <nav className="flex gap-6 border-b border-gray-200 mb-8">
           <button
             onClick={() => setTab("destinations")}
-            className={`pb-2 font-semibold ${
+            className={`pb-2 font-semibold transition-all ${
               tab === "destinations"
                 ? "text-blue-600 border-b-2 border-blue-600"
-                : "text-gray-500"
+                : "text-gray-500 hover:text-blue-600"
             }`}
           >
             🌎 Explorar Destinos
@@ -106,9 +106,9 @@ export function ClientDashboard() {
                 <img
                   src={dest.image}
                   alt={dest.name}
-                  className="w-full h-48 object-cover"
+                  className="w-full h-52 object-cover"
                 />
-                <div className="p-4">
+                <div className="p-5">
                   <h3 className="text-lg font-bold text-gray-800">
                     {dest.name}
                   </h3>
@@ -138,14 +138,14 @@ export function ClientDashboard() {
         {tab === "reservations" && (
           <div className="space-y-4">
             {reservations.length === 0 ? (
-              <p className="text-gray-500">
+              <p className="text-gray-500 text-center py-10">
                 Aún no tienes reservas registradas.
               </p>
             ) : (
               reservations.map((r) => (
                 <div
                   key={r.id}
-                  className="p-4 border border-gray-200 rounded-xl bg-gray-50 flex justify-between items-start"
+                  className="p-5 border border-gray-200 rounded-xl bg-white shadow-sm flex justify-between items-start hover:shadow-md transition"
                 >
                   <div>
                     <h3 className="text-lg font-semibold text-gray-800">
@@ -169,7 +169,7 @@ export function ClientDashboard() {
                   {r.status !== "Cancelada" && (
                     <button
                       onClick={() => cancelReservation(r.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-red-600"
+                      className="bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-600"
                     >
                       Cancelar
                     </button>
