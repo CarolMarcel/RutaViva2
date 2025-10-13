@@ -1,3 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 /* ESTILOS GLOBALES RUTAVIVA */
 
 /* Fuente moderna y limpia */
