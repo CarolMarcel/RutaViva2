@@ -1,63 +1,87 @@
 import { MapPin, Users } from "lucide-react";
+import { useState } from "react";
+import { ReservationForm } from "./ReservationForm";
 
-interface DestinationCardProps {
-  destination: {
-    id: string;
-    name: string;
-    location: string;
-    description: string;
-    price_per_person: number;
-    max_people: number;
-    image: string;
-  };
-  onReserve: () => void;
+interface Destination {
+  id: number;
+  name: string;
+  location: string;
+  description: string;
+  price: number;
+  max_people: number;
+  image_url: string;
 }
 
-export function DestinationCard({ destination, onReserve }: DestinationCardProps) {
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("es-CL", {
+interface DestinationCardProps {
+  destination: Destination;
+}
+
+export function DestinationCard({ destination }: DestinationCardProps) {
+  const [open, setOpen] = useState(false);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("es-CL", {
       style: "currency",
       currency: "CLP",
       minimumFractionDigits: 0,
     }).format(amount);
+  };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden transition-transform hover:scale-[1.02] border border-gray-100">
-      <div className="relative">
-        <img
-          src={destination.image}
-          alt={destination.name}
-          className="w-full h-48 object-cover"
-        />
-        <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-md">
-          {formatCurrency(destination.price_per_person)}
-        </div>
-      </div>
-
-      <div className="p-5 flex flex-col justify-between h-[260px]">
-        <div>
-          <h3 className="text-lg font-bold text-gray-800 mb-1">{destination.name}</h3>
-          <div className="flex items-center text-sm text-gray-500 mb-2">
-            <MapPin className="w-4 h-4 mr-1 text-blue-500" />
-            {destination.location}
+    <>
+      <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
+        <div className="relative h-48 overflow-hidden">
+          <img
+            src={destination.image_url}
+            alt={destination.name}
+            className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+          />
+          <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full shadow-md">
+            <span className="text-sm font-bold text-green-600">
+              {formatCurrency(destination.price)}
+            </span>
           </div>
-          <p className="text-gray-600 text-sm leading-relaxed mb-3">
+        </div>
+
+        <div className="p-6">
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
+            {destination.name}
+          </h3>
+
+          <div className="flex items-center text-gray-600 mb-3">
+            <MapPin className="w-4 h-4 mr-2" />
+            <span className="text-sm">{destination.location}</span>
+          </div>
+
+          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
             {destination.description}
           </p>
-          <div className="flex items-center text-sm text-gray-500">
-            <Users className="w-4 h-4 mr-1 text-gray-400" />
-            Máx. {destination.max_people} personas
-          </div>
-        </div>
 
-        <button
-          onClick={onReserve}
-          className="mt-4 w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Reservar Ahora
-        </button>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center text-gray-600">
+              <Users className="w-4 h-4 mr-2" />
+              <span className="text-sm">
+                Máx. {destination.max_people} personas
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setOpen(true)}
+            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
+          >
+            Reservar Ahora
+          </button>
+        </div>
       </div>
-    </div>
+
+      {open && (
+        <ReservationForm
+          destination={destination}
+          onClose={() => setOpen(false)}
+          onSuccess={() => console.log("Reserva creada con éxito")}
+        />
+      )}
+    </>
   );
 }
-

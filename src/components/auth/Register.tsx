@@ -1,55 +1,213 @@
-import { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useState } from "react";
+import { UserPlus, Mail, Lock, User, Phone } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
+import { validateEmail, validatePassword } from "../../lib/validation";
 
-export function Register({ onToggleMode }: { onToggleMode: () => void }) {
+interface RegisterProps {
+  onToggleMode: () => void;
+}
+
+export function Register({ onToggleMode }: RegisterProps) {
   const { signUp } = useAuth();
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setMessage('');
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden.');
+    setError("");
+    setMessage("");
+
+    // Validaciones básicas
+    if (!formData.fullName.trim()) {
+      setError("El nombre es obligatorio");
       return;
     }
-    try {
-      await signUp(email, password, fullName, phone);
-      setMessage('✅ Cuenta creada con éxito. Ahora puedes iniciar sesión.');
-    } catch (err: any) {
-      setError(err.message);
+
+    if (!validateEmail(formData.email)) {
+      setError("Por favor ingresa un correo electrónico válido");
+      return;
+    }
+
+    const passwordValidation = validatePassword(formData.password);
+    if (!passwordValidation.isValid) {
+      setError(passwordValidation.message);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Las contraseñas no coinciden");
+      return;
+    }
+
+    setLoading(true);
+
+    const { error } = await signUp(
+      formData.fullName,
+      formData.email,
+      formData.phone,
+      formData.password
+    );
+
+    setLoading(false);
+
+    if (error) {
+      setError(error);
+    } else {
+      setMessage("✅ Cuenta creada exitosamente. Iniciando sesión...");
+      setTimeout(() => {
+        window.location.reload(); // Refresca para abrir el Dashboard
+      }, 1500);
     }
   };
 
+  const handleChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
   return (
-    <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
-      <h2 className="text-2xl font-bold text-center mb-6">Crea tu cuenta RutaViva</h2>
-      {message && <div className="bg-green-100 text-green-700 p-3 rounded mb-3">{message}</div>}
-      {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-3">{error}</div>}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input type="text" placeholder="Nombre completo" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full p-3 border rounded" required />
-        <input type="email" placeholder="Correo electrónico" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3 border rounded" required />
-        <input type="tel" placeholder="Teléfono (+56 9...)" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full p-3 border rounded" required />
-        <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 border rounded" required />
-        <input type="password" placeholder="Confirmar contraseña" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full p-3 border rounded" required />
-        <button className="w-full bg-green-600 text-white py-3 rounded font-semibold hover:bg-green-700">
-          Crear cuenta
+    <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full mb-4">
+          <UserPlus className="w-8 h-8 text-white" />
+        </div>
+        <h2 className="text-3xl font-bold text-gray-900">Crear Cuenta</h2>
+        <p className="text-gray-600 mt-2">Únete a RutaViva hoy</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {message && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+            {message}
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Nombre Completo
+          </label>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              value={formData.fullName}
+              onChange={(e) => handleChange("fullName", e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="Juan Pérez"
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Correo Electrónico
+          </label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleChange("email", e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="tu@email.com"
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Teléfono
+          </label>
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => handleChange("phone", e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="+56 9 1234 5678"
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Contraseña
+          </label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="password"
+              value={formData.password}
+              onChange={(e) => handleChange("password", e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <p className="mt-1 text-xs text-gray-500">
+            Mínimo 8 caracteres, una mayúscula, una minúscula y un número
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Confirmar Contraseña
+          </label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="password"
+              value={formData.confirmPassword}
+              onChange={(e) => handleChange("confirmPassword", e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? "Creando cuenta..." : "Crear Cuenta"}
         </button>
       </form>
-      <p className="text-center mt-4">
-        ¿Ya tienes cuenta?{' '}
-        <button onClick={onToggleMode} className="text-blue-600 font-semibold hover:underline">
-          Inicia sesión
-        </button>
-      </p>
+
+      <div className="mt-6 text-center">
+        <p className="text-gray-600">
+          ¿Ya tienes cuenta?{" "}
+          <button
+            onClick={onToggleMode}
+            className="text-green-600 hover:text-green-700 font-semibold"
+          >
+            Inicia sesión aquí
+          </button>
+        </p>
+      </div>
     </div>
   );
 }
+
 
 
