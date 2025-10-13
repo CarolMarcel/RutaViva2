@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(false);
   }, []);
 
-  // Función de login
+  // 🔹 Iniciar sesión
   const signIn = async (email: string, password: string) => {
     const users = JSON.parse(localStorage.getItem("rutaviva_users") || "[]");
 
@@ -42,12 +42,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return { error: "Credenciales incorrectas" };
     }
 
-    localStorage.setItem("rutaviva_user", JSON.stringify(foundUser));
-    setUser(foundUser);
+    // ✅ Evita guardar la contraseña en el estado del usuario activo
+    const safeUser: User = {
+      name: foundUser.name,
+      email: foundUser.email,
+      phone: foundUser.phone,
+      role: foundUser.role,
+    };
+
+    localStorage.setItem("rutaviva_user", JSON.stringify(safeUser));
+    setUser(safeUser);
     return {};
   };
 
-  // Función de registro
+  // 🔹 Registrar usuario nuevo
   const signUp = async (
     name: string,
     email: string,
@@ -61,22 +69,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return { error: "El correo ya está registrado" };
     }
 
-    const newUser: User & { password: string } = {
+    const newUser = {
       name,
       email,
       phone,
       role: "client",
-      password,
+      password, // Solo se guarda aquí, no se expone en sesión
     };
 
     users.push(newUser);
     localStorage.setItem("rutaviva_users", JSON.stringify(users));
-    localStorage.setItem("rutaviva_user", JSON.stringify(newUser));
-    setUser(newUser);
+
+    const safeUser: User = {
+      name,
+      email,
+      phone,
+      role: "client",
+    };
+
+    localStorage.setItem("rutaviva_user", JSON.stringify(safeUser));
+    setUser(safeUser);
     return {};
   };
 
-  // Cerrar sesión
+  // 🔹 Cerrar sesión
   const signOut = () => {
     localStorage.removeItem("rutaviva_user");
     setUser(null);
@@ -97,6 +113,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+// Hook personalizado
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -104,5 +121,4 @@ export const useAuth = () => {
   }
   return context;
 };
-
 
