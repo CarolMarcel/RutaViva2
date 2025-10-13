@@ -5,13 +5,19 @@ interface User {
   email: string;
   phone?: string;
   role: "client" | "admin" | "collaborator";
+  password?: string; // 🔹 opcional para mantener compatibilidad local
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
-  signUp: (name: string, email: string, phone: string, password: string) => Promise<{ error?: string }>;
+  signUp: (
+    name: string,
+    email: string,
+    phone: string,
+    password: string
+  ) => Promise<{ error?: string }>;
   signOut: () => void;
 }
 
@@ -21,33 +27,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Cargar usuario guardado en localStorage
+  // 🔹 Cargar usuario guardado en localStorage al iniciar la app
   useEffect(() => {
-    const savedUser = localStorage.getItem("rutaviva_user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    try {
+      const savedUser = localStorage.getItem("rutaviva_user");
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        if (parsed && parsed.email && parsed.name) {
+          setUser(parsed);
+        } else {
+          localStorage.removeItem("rutaviva_user");
+        }
+      }
+    } catch {
+      localStorage.removeItem("rutaviva_user");
     }
     setLoading(false);
   }, []);
 
-  // Función de login
+  // 🔹 Iniciar sesión
   const signIn = async (email: string, password: string) => {
     const users = JSON.parse(localStorage.getItem("rutaviva_users") || "[]");
 
     const foundUser = users.find(
-      (u: any) => u.email === email && u.password === password
+      (u: User & { password: string }) =>
+        u.email === email && u.password === password
     );
 
     if (!foundUser) {
       return { error: "Credenciales incorrectas" };
     }
 
-    localStorage.setItem("rutaviva_user", JSON.stringify(foundUser));
+    // 🔹 Guardar usuario activo
+    localStorage.setItem(
+      "rutaviva_user",
+      JSON.stringify({
+        name: foundUser.name,
+        email: foundUser.email,
+        phone: foundUser.phone,
+        role: foundUser.role,
+      })
+    );
+
     setUser(foundUser);
     return {};
   };
 
-  // Función de registro
+  // 🔹 Registrarse
   const signUp = async (
     name: string,
     email: string,
@@ -56,7 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   ) => {
     const users = JSON.parse(localStorage.getItem("rutaviva_users") || "[]");
 
-    const emailExists = users.some((u: any) => u.email === email);
+    const emailExists = users.some((u: User & { password: string }) => u.email === email);
     if (emailExists) {
       return { error: "El correo ya está registrado" };
     }
@@ -69,14 +95,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       password,
     };
 
+    // 🔹 Guardar nuevo usuario y establecerlo como logueado
     users.push(newUser);
     localStorage.setItem("rutaviva_users", JSON.stringify(users));
-    localStorage.setItem("rutaviva_user", JSON.stringify(newUser));
+    localStorage.setItem(
+      "rutaviva_user",
+      JSON.stringify({
+        name,
+        email,
+        phone,
+        role: "client",
+      })
+    );
+
     setUser(newUser);
     return {};
   };
 
-  // Cerrar sesión
+  // 🔹 Cerrar sesión
   const signOut = () => {
     localStorage.removeItem("rutaviva_user");
     setUser(null);
@@ -97,6 +133,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+// 🔹 Hook personalizado
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -104,5 +141,4 @@ export const useAuth = () => {
   }
   return context;
 };
-
 
