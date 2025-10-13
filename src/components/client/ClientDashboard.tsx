@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { destinations } from "../../lib/mockDb";
+import logo from "../../assets/logo_4_1.png"; // 🟦 Asegúrate de tener tu logo en src/assets/logo4_1.png
 
 interface Reservation {
   id: number;
@@ -19,7 +20,6 @@ export function ClientDashboard() {
     JSON.parse(localStorage.getItem("rutaviva_reservations") || "[]")
   );
 
-  // Estado del modal
   const [selectedDestination, setSelectedDestination] = useState<any | null>(null);
   const [date, setDate] = useState("");
   const [people, setPeople] = useState(1);
@@ -67,16 +67,24 @@ export function ClientDashboard() {
       <div className="w-full max-w-[1400px] bg-white rounded-3xl shadow-2xl p-10 border border-gray-100">
         {/* Header */}
         <header className="flex justify-between items-center mb-12 border-b pb-6">
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-extrabold text-blue-700">RutaViva</h1>
-            <p className="text-gray-500 text-sm ml-1">| Panel del Cliente</p>
+          {/* Logo y nombre */}
+          <div className="flex items-center gap-3">
+            <img
+              src={logo}
+              alt="RutaViva Logo"
+              className="h-14 w-auto object-contain"
+            />
+            <div>
+              <h1 className="text-3xl font-extrabold text-blue-700">RutaViva</h1>
+              <p className="text-gray-500 text-sm ml-1">| Panel del Cliente</p>
+            </div>
           </div>
 
+          {/* Usuario */}
           <div className="text-right">
-            <p className="font-semibold text-gray-800 text-lg">
+            <p className="font-semibold text-gray-800 text-lg capitalize">
               {user?.name || "Usuario"}
             </p>
-            <p className="text-sm text-gray-500">{user?.email}</p>
             <button
               onClick={signOut}
               className="mt-3 bg-red-500 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition"
