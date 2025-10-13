@@ -83,11 +83,12 @@ export function ClientDashboard() {
           {/* Usuario */}
           <div className="text-right">
             <p className="font-semibold text-gray-800 text-lg capitalize">
-              {user?.name || "Usuario"}
+              {user?.name || "Usuario"} {/* 🔹 Muestra el nombre registrado */}
             </p>
+            <p className="text-sm text-gray-500">{user?.role === "admin" ? "Administrador" : "Cliente"}</p>
             <button
               onClick={signOut}
-              className="mt-3 bg-red-500 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition"
+              className="mt-2 bg-red-500 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition"
             >
               Salir
             </button>
