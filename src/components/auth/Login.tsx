@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import logo from "../../assets/logo_4_1.png";
+import logo from "../../assets/logo4_1.png";
 
 interface LoginProps {
   onToggleMode: () => void;
@@ -20,13 +20,15 @@ export function Login({ onToggleMode, onForgotPassword }: LoginProps) {
 
   return (
     <div
-      className="flex justify-center items-center min-h-screen"
       style={{
-        background:
-          "linear-gradient(to bottom right, #f0f9ff, #fefefe, #ecfdf5)",
+        background: "linear-gradient(to bottom right, #f0f9ff, #fefefe, #ecfdf5)",
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center", // centrado horizontal
+        alignItems: "center", // centrado vertical
       }}
     >
-      <div className="auth-box">
+      <div className="auth-box" style={{ width: "100%", maxWidth: "420px" }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: "1rem" }}>
           <img
