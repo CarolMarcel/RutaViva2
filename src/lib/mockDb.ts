@@ -1,7 +1,7 @@
 // mockDb.ts
 // 🌎 Datos de ejemplo para funcionar en modo local
 
-export const mockDestinations = [
+export const Destinations = [
   {
     id: "d1",
     name: "Torres del Paine",
