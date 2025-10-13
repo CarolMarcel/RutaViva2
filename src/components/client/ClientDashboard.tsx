@@ -52,24 +52,24 @@ export function ClientDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 p-8">
-      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-6">
+      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
         {/* Header */}
-        <header className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">RutaViva</h1>
-            <p className="text-gray-600 text-sm">Panel del Cliente</p>
+        <header className="flex justify-between items-center mb-10 border-b pb-4">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-blue-700">RutaViva</h1>
+            <p className="text-gray-500 text-sm ml-1">| Panel del Cliente</p>
           </div>
           <div className="text-right">
             <p className="font-semibold text-gray-800">{user?.fullName}</p>
             <p className="text-sm text-gray-500">{user?.email}</p>
-            <button
-              onClick={signOut}
-              className="mt-2 bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-red-600"
-            >
-              Salir
-            </button>
-          </div>
-        </header>
+          <button
+            onClick={signOut}
+            className="mt-2 bg-red-500 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-600"
+          >
+            Salir
+          </button>
+        </div>
+      </header>
 
         {/* Tabs */}
         <nav className="flex gap-6 border-b border-gray-200 mb-6">
@@ -97,20 +97,20 @@ export function ClientDashboard() {
 
         {/* Sección de destinos */}
         {tab === "destinations" && (
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {destinations.map((dest) => (
               <div
                 key={dest.id}
-                className="bg-white border border-gray-200 rounded-xl shadow hover:shadow-lg transition overflow-hidden"
+                className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-transform transform hover:-translate-y-1 overflow-hidden"
               >
                 <img
                   src={dest.image}
-                  alt={dest.title}
+                  alt={dest.name}
                   className="w-full h-48 object-cover"
                 />
                 <div className="p-4">
                   <h3 className="text-lg font-bold text-gray-800">
-                    {dest.title}
+                    {dest.name}
                   </h3>
                   <p className="text-sm text-gray-600 mb-2">
                     📍 {dest.location}
@@ -124,7 +124,7 @@ export function ClientDashboard() {
                   </p>
                   <button
                     onClick={() => handleReserve(dest)}
-                    className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700"
+                    className="w-full bg-blue-600 text-white py-2.5 rounded-xl font-semibold hover:bg-blue-700 shadow-sm"
                   >
                     Reservar Ahora
                   </button>
