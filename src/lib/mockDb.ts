@@ -3,7 +3,7 @@
 
 export const Destinations = [
   {
-    id: "d1",
+    id: 1,
     name: "Torres del Paine",
     location: "Región de Magallanes, Chile",
     description:
@@ -14,7 +14,7 @@ export const Destinations = [
       "https://chileestuyo.cl/wp-content/uploads/2021/03/parque-nacional-torres-del-paine.jpg",
   },
   {
-    id: "d2",
+    id: 2,
     name: "San Pedro de Atacama",
     location: "Región de Antofagasta",
     description:
@@ -25,7 +25,7 @@ export const Destinations = [
       "https://www.vertice.travel/wp-content/uploads/2023/08/VERTICE-San-Pedro-Esencial_Laguna-Chaxa.png",
   },
   {
-    id: "d3",
+    id: 3,
     name: "Isla de Chiloé",
     location: "Región de Los Lagos, Chile",
     description:

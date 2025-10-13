@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { destinations } from "../../lib/mockDb";
+import { destinations } from "../../lib/mockDb.ts";
 
 interface Reservation {
   id: number;
