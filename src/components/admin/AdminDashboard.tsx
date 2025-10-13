@@ -1,89 +1,168 @@
-import { useState } from 'react';
-import { LogOut, Users, MapPin, Calendar, BarChart3, Shield } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { UserManagement } from './UserManagement';
-import { DestinationManagement } from './DestinationManagement';
-import { ReservationManagement } from './ReservationManagement';
-import { AuditLogs } from './AuditLogs';
-import { Statistics } from './Statistics';
+import { useAuth } from "../../contexts/AuthContext";
+import { useState, useEffect } from "react";
+
+interface User {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+}
+
+interface Reservation {
+  id: number;
+  destination: string;
+  date: string;
+  people: number;
+  total: number;
+  userEmail: string;
+  status: string;
+}
 
 export function AdminDashboard() {
-  const { profile, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'destinations' | 'reservations' | 'audit'>('stats');
+  const { user, signOut } = useAuth();
+  const [users, setUsers] = useState<User[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
 
-  const tabs = [
-    { id: 'stats', label: 'Estadísticas', icon: BarChart3 },
-    { id: 'users', label: 'Usuarios', icon: Users },
-    { id: 'destinations', label: 'Destinos', icon: MapPin },
-    { id: 'reservations', label: 'Reservas', icon: Calendar },
-    { id: 'audit', label: 'Auditoría', icon: Shield },
-  ];
+  // Cargar datos simulados
+  useEffect(() => {
+    const savedUsers = JSON.parse(localStorage.getItem("rutaviva_users") || "[]");
+    const savedReservations = JSON.parse(
+      localStorage.getItem("rutaviva_reservations") || "[]"
+    );
+
+    setUsers(savedUsers);
+    setReservations(savedReservations);
+  }, []);
+
+  // Eliminar una reserva
+  const deleteReservation = (id: number) => {
+    if (confirm("¿Seguro que deseas eliminar esta reserva?")) {
+      const updated = reservations.filter((r) => r.id !== id);
+      setReservations(updated);
+      localStorage.setItem("rutaviva_reservations", JSON.stringify(updated));
+    }
+  };
+
+  // Reset completo del sistema
+  const resetData = () => {
+    if (confirm("⚠️ Esto eliminará todos los datos locales del sistema. ¿Deseas continuar?")) {
+      localStorage.removeItem("rutaviva_users");
+      localStorage.removeItem("rutaviva_reservations");
+      alert("Sistema restaurado a valores iniciales.");
+      setUsers([]);
+      setReservations([]);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      <nav className="bg-white shadow-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-800 rounded-full flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
-                  RutaViva Admin
-                </h1>
-                <p className="text-xs text-gray-500">Panel de Administración</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{profile?.full_name}</p>
-                <p className="text-xs text-gray-500 capitalize">{profile?.role}</p>
-              </div>
-              <button
-                onClick={signOut}
-                className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="text-sm font-medium">Salir</span>
-              </button>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-8">
+      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-8">
+        {/* ENCABEZADO */}
+        <header className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">
+              🧭 Panel del Administrador
+            </h1>
+            <p className="text-gray-600 text-sm">
+              Bienvenido, {user?.fullName || "Administrador"} — supervisa usuarios y reservas
+            </p>
           </div>
-        </div>
-      </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex space-x-2 border-b border-gray-200 overflow-x-auto">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                  className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'border-b-2 border-slate-600 text-slate-700'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
+          <div className="flex gap-3">
+            <button
+              onClick={resetData}
+              className="bg-yellow-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-600"
+            >
+              Restaurar Datos
+            </button>
+            <button
+              onClick={signOut}
+              className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </header>
+
+        {/* SECCIÓN DE USUARIOS */}
+        <section className="mb-10">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">👤 Usuarios Registrados</h2>
+
+          {users.length === 0 ? (
+            <p className="text-gray-500">No hay usuarios registrados aún.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full border border-gray-200 rounded-xl">
+                <thead className="bg-blue-50 text-gray-700">
+                  <tr>
+                    <th className="py-2 px-4 text-left">Nombre</th>
+                    <th className="py-2 px-4 text-left">Correo</th>
+                    <th className="py-2 px-4 text-left">Rol</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <tr key={u.id} className="border-t border-gray-100 hover:bg-gray-50">
+                      <td className="py-2 px-4">{u.fullName}</td>
+                      <td className="py-2 px-4">{u.email}</td>
+                      <td className="py-2 px-4 capitalize text-blue-600 font-medium">
+                        {u.role}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        {/* SECCIÓN DE RESERVAS */}
+        <section>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">📋 Reservas Registradas</h2>
+
+          {reservations.length === 0 ? (
+            <p className="text-gray-500">No hay reservas realizadas.</p>
+          ) : (
+            <div className="grid gap-4">
+              {reservations.map((r) => (
+                <div
+                  key={r.id}
+                  className="p-5 border border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition"
                 >
-                  <div className="flex items-center space-x-2">
-                    <Icon className="w-4 h-4" />
-                    <span>{tab.label}</span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800">
+                        {r.destination}
+                      </h3>
+                      <p className="text-sm text-gray-600">📅 Fecha: {r.date}</p>
+                      <p className="text-sm text-gray-600">👥 Personas: {r.people}</p>
+                      <p className="text-sm text-green-700 font-semibold">
+                        💰 Total: ${r.total.toLocaleString("es-CL")}
+                      </p>
+                      <p className="text-sm text-blue-600 mt-1">✉️ Cliente: {r.userEmail}</p>
+                      <p
+                        className={`text-sm mt-2 font-semibold ${
+                          r.status === "Completada"
+                            ? "text-green-600"
+                            : "text-yellow-600"
+                        }`}
+                      >
+                        Estado: {r.status || "Pendiente"}
+                      </p>
+                    </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          {activeTab === 'stats' && <Statistics />}
-          {activeTab === 'users' && <UserManagement />}
-          {activeTab === 'destinations' && <DestinationManagement />}
-          {activeTab === 'reservations' && <ReservationManagement />}
-          {activeTab === 'audit' && <AuditLogs />}
-        </div>
+                    <button
+                      onClick={() => deleteReservation(r.id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded-lg text-sm font-semibold hover:bg-red-600"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );
