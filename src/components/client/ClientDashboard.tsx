@@ -83,7 +83,7 @@ export function ClientDashboard() {
           {/* Usuario */}
           <div className="text-right">
             <p className="font-semibold text-gray-800 text-lg capitalize">
-              {user?.name || "Usuario"} {/* 🔹 Muestra el nombre registrado */}
+              {user?.name || "Usuario"} {/* Muestra el nombre registrado */}
             </p>
             <p className="text-sm text-gray-500">{user?.role === "admin" ? "Administrador" : "Cliente"}</p>
             <button
